@@ -6,4 +6,4 @@ Tool that allows one to control Moti via a terminal tool
 
 Comes with samples, example use:
 
-    python moti_serial.py < tests/gotest
+    python moti_serial.py /dev/ttyACM0 < tests/gotest
