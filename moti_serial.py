@@ -1,6 +1,7 @@
 #-*- coding: utf8
 
 import serial
+from sys import platform
 from flask import Flask, render_template, request, jsonify
 
 
@@ -35,6 +36,11 @@ def moti_send_fade(led, start_red, start_green, start_blue, end_red, end_green, 
             end_red, end_green, end_blue, duration >> 8, duration & 255]
     moti_send_data(data)
 
+
+def get_ports():
+    if not platform.startswith('win'):
+        from glob import glob
+        return glob('/dev/ttyACM*') + glob('/dev/tty.usbmodem*')
 
 @app.route('/connect')
 def connect():
@@ -125,7 +131,7 @@ def fade():
 
 @app.route('/')
 def moti():
-    ports = ['/dev/ttyACM' + str(i) for i in xrange(19)]
+    ports = get_ports()
     baudrates = reversed(['300', '1200', '2400', '4800', '9600', '14400', '19200', '28800', '38400', '57600', '115200'])
     return render_template('moti.html', ports=ports, baudrates=baudrates)
 
