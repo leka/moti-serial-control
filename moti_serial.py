@@ -1,20 +1,24 @@
 #-*- coding: utf8
 
 import serial
-import bluetooth
+import lightblue
 from sys import platform
 from flask import Flask, render_template, request, jsonify
+
+
+# moti2: 20:13:06:13:14:75
 
 
 app = Flask(__name__)
 app.secret_key = '\x82\xea\xf7\x16N\xfa\x84E:\x06H\x9b\xb0\xc7\xaas"\x18Z\x1f\xff\xc5\xf0\x89'
 
 global_port = None
-
+global_port_send = None
 
 def moti_send_data(data):
-    global_port.send(''.join([chr(c) for c in data]))
-    print 'Data sent!'
+    if global_port is not None:
+        global_port_send(''.join([chr(c) for c in data]))
+        print 'Data sent!'
 
 
 def moti_send_go(direction, speed, duration):
@@ -47,22 +51,54 @@ def get_ports():
 
 @app.route('/connect')
 def connect():
-    global global_port
+    global global_port, global_port_send
 
-    # port = request.args.get('port', '/dev/ttyACM0')
-    # baudrate = request.args.get('baudrate', 115200)
+    port = request.args.get('port', '/dev/ttyACM0')
+    baudrate = request.args.get('baudrate', 115200)
 
     if global_port is not None:
         global_port.close()
 
     try:
-        global_port = bluetooth.BluetoothSocket(bluetooth.RFCOMM)  # serial.Serial(port=port, baudrate=baudrate, timeout=3.0)
-        global_port.connect(('20:13:06:14:34:01', 1))
+        global_port = serial.Serial(port=port, baudrate=baudrate, timeout=3.0)
+        global_port_send = global_port.write
         print 'Connected!'
         return jsonify(result=True)
     except Exception as e:
         print 'Not connected!', e
         return jsonify(result=False)
+
+
+@app.route('/bluetooth_search')
+def bluetooth_search():
+    print 'Searching...'
+    devices = lightblue.finddevices()
+    print 'Devices found: ' + ', '.join([d[1] for d in devices])
+
+    return jsonify(result=[d[:2] for d in devices])
+
+
+@app.route('/bluetooth_connect')
+def bluetooth_connect():
+    global global_port, global_port_send
+
+    if global_port is not None:
+        global_port.close()
+
+    mac_address = request.args.get('device', '')
+
+    print 'Trying to connect to device ' + mac_address
+
+    try:
+        global_port = lightblue.socket(proto=lightblue.RFCOMM)
+        global_port.connect((mac_address, 1))
+        global_port_send = global_port.send
+        print 'Connected!'
+        return jsonify(result=True)
+    except Exception as e:
+        print 'Not connected!', e
+        return jsonify(result=False)
+
 
 
 @app.route('/disconnect')
@@ -135,7 +171,7 @@ def fade():
 
 @app.route('/')
 def moti():
-    ports = get_ports() + ['Bluetooth']
+    ports = get_ports()
     baudrates = reversed(['300', '1200', '2400', '4800', '9600', '14400', '19200', '28800', '38400', '57600', '115200'])
     return render_template('moti.html', ports=ports, baudrates=baudrates)
 

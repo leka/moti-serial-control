@@ -17,6 +17,90 @@
 							$('#connect-btn').hide();
 							$('#connect-port').hide();
 							$('#connect-baudrate').hide();
+
+							$("#bluetooth-btn").hide();
+							$("#bluetooth-device").hide();
+							$("#bluetooth-connect-btn").hide();
+
+							$("#bluetooth-mac-connect").hide();
+							$("#mac-connect-btn").hide();
+							
+							$('#disconnect-btn').show();
+
+							$('#go-div').show();
+							$('#spin-div').show();
+							$('#stop-div').show();
+							$('#fade-div').show();
+						}
+					});
+
+					return false;
+				});
+
+				$("#bluetooth-btn").bind('click', function() {
+					$("#message").text("Searching for bluetooth devices...");
+
+					$.getJSON('/bluetooth_search', {
+					}, function(data) {
+						if (data.result) {
+							data.result.map(function(device) {
+								$("#bluetooth-device").append($('<option>', {value: device[0]}).text(device[1])); 
+							});
+
+							$("#bluetooth-device").show();
+							$("#bluetooth-connect-btn").show();
+
+							$("#message").text("");
+						}
+					});
+
+					return false;
+				});
+
+				$("#bluetooth-connect-btn").bind('click', function() {
+					$.getJSON('/bluetooth_connect', {
+						device: $('#bluetooth-device').val(),
+					}, function(data) {
+						if (data.result) {
+							$('#connect-btn').hide();
+							$('#connect-port').hide();
+							$('#connect-baudrate').hide();
+
+							$("#bluetooth-btn").hide();
+							$("#bluetooth-device").hide();
+							$("#bluetooth-connect-btn").hide();
+
+							$("#bluetooth-mac-connect").hide();
+							$("#mac-connect-btn").hide();
+
+							$('#disconnect-btn').show();
+
+							$('#go-div').show();
+							$('#spin-div').show();
+							$('#stop-div').show();
+							$('#fade-div').show();
+						}
+					});
+
+					return false;
+				});
+
+				$("#mac-connect-btn").bind('click', function() {
+					$.getJSON('/bluetooth_connect', {
+						device: $('#bluetooth-mac-connect').val(),
+					}, function(data) {
+						if (data.result) {
+							$('#connect-btn').hide();
+							$('#connect-port').hide();
+							$('#connect-baudrate').hide();
+
+							$("#bluetooth-btn").hide();
+							$("#bluetooth-device").hide();
+							$("#bluetooth-connect-btn").hide();
+
+							$("#bluetooth-mac-connect").hide();
+							$("#mac-connect-btn").hide();
+
 							$('#disconnect-btn').show();
 
 							$('#go-div').show();
@@ -35,6 +119,14 @@
 						$('#connect-btn').show();
 						$('#connect-port').show();
 						$('#connect-baudrate').show();
+
+						$("#bluetooth-btn").show();
+						$("#bluetooth-device").show();
+						$("#bluetooth-connect-btn").show();
+
+						$("#bluetooth-mac-connect").show();
+						$("#mac-connect-btn").show();
+
 						$('#disconnect-btn').hide();
 
 						$('#go-div').hide();
@@ -113,7 +205,7 @@
 					if (e.keyCode == 37) {
 						$.getJSON('/spin', {
 							rotation: 0,
-							speed: 140,
+							speed: 255,
 							angle: 160
 						}, function(data) {
 							if (data.result)
@@ -123,7 +215,7 @@
 					else if (e.keyCode == 38) {
 						$.getJSON('/go', {
 							direction: 1,
-							speed: 140,
+							speed: 255,
 							duration: 0
 						}, function(data) {
 							if (data.result)
@@ -133,7 +225,7 @@
 					else if (e.keyCode == 39) {
 						$.getJSON('/spin', {
 							rotation: 1,
-							speed: 140,
+							speed: 255,
 							angle: 160
 						}, function(data) {
 							if (data.result)
@@ -143,7 +235,7 @@
 					else if (e.keyCode == 40) {
 						$.getJSON('/go', {
 							direction: 0,
-							speed: 140,
+							speed: 255,
 							duration: 0
 						}, function(data) {
 							if (data.result)
@@ -166,6 +258,59 @@
 					}
 				}
 			}
+
+
+			function goForward() {
+				$.getJSON('/go', {
+					direction: 1,
+					speed: 255,
+					duration: 0
+				}, function(data) {
+					if (data.result)
+						$('#message').text('FORWARD');
+				});
+			}
+
+			function goBackward() {
+				$.getJSON('/go', {
+					direction: 0,
+					speed: 255,
+					duration: 0
+				}, function(data) {
+					if (data.result)
+						$('#message').text('BACKWARD');
+				});
+			}
+
+			function spinLeft() {
+				$.getJSON('/spin', {
+					rotation: 0,
+					speed: 255,
+					angle: 160
+				}, function(data) {
+					if (data.result)
+						$('#message').text('SPIN LEFT');
+				});
+			}
+
+			function spinRight() {
+				$.getJSON('/spin', {
+					rotation: 1,
+					speed: 255,
+					angle: 160
+				}, function(data) {
+					if (data.result)
+						$('#message').text('SPIN LEFT');
+				});
+			}
+
+			function goStop() {
+				$.getJSON('/stop', {
+				}, function(data) {
+					if (data.result)
+						$('#message').text('STOP');
+				});
+			}
 		</script>
 
 		<select id="connect-port">
@@ -183,6 +328,22 @@
 		<button id="connect-btn">Connect</button>
 
 		<button id="disconnect-btn" style="display: none">Disconnect</button>
+
+		<br>
+		<br>
+
+		<button id="bluetooth-btn">Search for bluetooth devices</button>
+
+		<select id="bluetooth-device" style="display: none;"></select>
+
+		<button id="bluetooth-connect-btn" style="display: none;">Connect via Bluetooth</button>
+
+		<br>
+		<br>
+
+		<input id="bluetooth-mac-connect" type="text" name="bluetooth-mac-connect">
+
+		<button id="mac-connect-btn">Connect via MAC address</button>
 
 		<br>
 		<br>
@@ -251,6 +412,19 @@
 			<br>
 			<br>
 		</div>
+
+		<br>
+		<br>
+		<br>
+
+		<button id="left-btn" onmousedown="spinLeft()" onmouseup="goStop()">LEFT</button>
+		<button id="forward-btn" onmousedown="goForward()" onmouseup="goStop()">FORWARD</button>
+		<button id="backward-btn" onmousedown="goBackward()" onmouseup="goStop()">BACKWARD</button>
+		<button id="right-btn" onmousedown="spinRight()" onmouseup="goStop()">RIGHT</button>
+		
+		<br>
+		<br>
+		<br>
 
 		<span id="message"></span>
 
