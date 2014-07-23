@@ -5,5 +5,5 @@
   "description": "Control Moti's motion through your browser with Node.js",
   "keywords": "serial, socket.io, node-serialport",
   "author": { "name": "Flavien Raynaud" },
-  "dependencies": { "serialport": "1.4.x", "socket.io": "*", "express": "3.x", "bluetooth-serial-port": "*" }
+  "dependencies": { "serialport": "1.x", "socket.io": "1.x", "express": "4.x", "bluetooth-serial-port": "1.x" }
 }
