@@ -37,18 +37,13 @@ function dataStop() {
 }
 
 
-var serialport = require("serialport"),				// include the serialport library
-	SerialPort  = serialport.SerialPort,			// make a local instance of serial
-	app = require('express')(),						// start Express framework
-	server = require('http').createServer(app),		// start an HTTP server
-	io = require('socket.io').listen(server);		// filter the server using socket.io
+var serialport = require("serialport"),
+	SerialPort  = serialport.SerialPort,
+	app = require('express')(),
+	server = require('http').createServer(app),
+	io = require('socket.io').listen(server);
 
-
-var portName = process.argv[2];						// third word of the command line should be serial port name
-console.log("opening serial port: " + portName);	// print out the port you're listening on
-
-
-server.listen(8080);								// listen for incoming requests on the server
+server.listen(8080);
 console.log("Listening for new clients on port 8080");
 
 var myPort;
@@ -56,47 +51,49 @@ var myBTPort = new (require('bluetooth-serial-port')).BluetoothSerialPort();
 var portType = '';
 
 
-// respond to web GET requests with the index.html page:
 app.get('/', function (request, response) {
 	response.sendfile(__dirname + '/index.html');
 });
 
 
-// listen for new socket.io connections:
 io.sockets.on('connection', function (socket) {
 	socket.on('downEvent', function(keyCode) {
-		console.log(keyCode);
+		if (portType != '') {
+			console.log(keyCode);
 
-		switch (keyCode) {
-			case 37:
-				console.log('Left');
-				sendData(dataSpin(0, 255, 160));
-				break;
+			switch (keyCode) {
+				case 37:
+					console.log('Left');
+					sendData(dataSpin(0, 255, 160));
+					break;
 
-			case 38:
-				console.log('Forward');
-				sendData(dataGo(1, 255, 0));
-				break;
+				case 38:
+					console.log('Forward');
+					sendData(dataGo(1, 255, 0));
+					break;
 
-			case 39:
-				console.log('Right');
-				sendData(dataSpin(1, 255, 160));
-				break;
+				case 39:
+					console.log('Right');
+					sendData(dataSpin(1, 255, 160));
+					break;
 
-			case 40:
-				console.log('Backward');
-				sendData(dataGo(0, 255, 0));
-				break;
+				case 40:
+					console.log('Backward');
+					sendData(dataGo(0, 255, 0));
+					break;
 
-			default:
-				break;
+				default:
+					break;
+			}
 		}
 	});
 
 	socket.on('upEvent', function (keyCode) {
-		console.log('Up');
+		if (portType != '') {
+			console.log('Up');
 
-		sendData(dataStop());
+			sendData(dataStop());
+		}
 	});
 
 	socket.on('listUSBPorts', function () {
@@ -114,6 +111,9 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('usbConnect', function(port) {
+		socket.emit('disconnectDevice');
+		while (portType != '');
+
 		console.log('Connecting...');
 
 		/* TODO: Handle exceptions */
@@ -141,6 +141,9 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('bluetoothConnect', function(address) {
+		socket.emit('disconnectDevice');
+		while (portType != '');
+
 		portType = 'Bluetooth';
 
 		console.log('Connecting to Bluetooth...');
@@ -150,5 +153,17 @@ io.sockets.on('connection', function (socket) {
 				console.log('Bluetooth connected... ' + myBTPort);
 			});
 		});
+	});
+
+	socket.on('disconnectDevice', function () {
+		if (portType == 'USB')
+			myPort.close();
+		else if (portType == 'Bluetooth')
+			myBTPort.close();
+
+		if (portType != '')
+			console.log('Disconnected.');
+
+		portType = '';
 	});
 });

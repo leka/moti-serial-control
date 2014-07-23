@@ -51,6 +51,8 @@
 
 				if (port.length > 0)
 					socket.emit('usbConnect', port.val());
+
+				$('#message').text('Connected via USB.');
 			});
 
 			$('#bluetooth-search-btn').click(function() {
@@ -63,6 +65,20 @@
 
 				if (port.length > 0)
 					socket.emit('bluetoothConnect', port.val());
+
+				$('#message').text('Connected via Bluetooth.');
+			});
+
+			$('#bluetooth-mac-connect-btn').click(function () {
+				socket.emit('bluetoothConnect', $('#bluetooth-mac-address').val());
+
+				$('#message').text('Connected via Bluetooth.');
+			});
+
+			$('#disconnect-btn').click(function () {
+				socket.emit('disconnectDevice');
+
+				$('#message').text('Not connected.');
 			});
 		});
 	</script>
@@ -79,6 +95,17 @@
 		<button id="bluetooth-connect-btn">Connect via Bluetooth</button>
 		<button id="bluetooth-search-btn">Search for Bluetooth devices</button>
 
-		<span id="message"></span>
+		<br>
+
+		<input id="bluetooth-mac-address" type="input">
+		<button id="bluetooth-mac-connect-btn">Connect via Bluetooth MAC Address</button>
+
+		<br>
+
+		<button id="disconnect-btn">Disconnect</button>
+
+		<br><br>
+
+		<span id="message">Not connected</span>
 	</body>
 </html>
