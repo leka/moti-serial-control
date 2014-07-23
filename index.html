@@ -1,15 +1,9 @@
-
-
-
-
-
-
 <!DOCTYPE html>
 <html>
 	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-	<script src="/socket.io/socket.io.js"></script>
-	<script>
-		// open a connection to the serial server:
+	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+	<script type="text/javascript">
 		var socket = io.connect('http://localhost:8080');
 
 		 // when you get a serialdata event, do this:
@@ -23,24 +17,68 @@
 			element.innerHTML = data;									// set the text itself	
 		});
 
-		document.onkeydown = checkDownEvent;
-		document.onkeyup = checkUpEvent;
+		socket.on('usbPortsListed', function(ports) {
+			select = $('#usb-port');
 
-		function checkDownEvent(e) {
+			ports.map(function(port) {
+				select.append($("<option/>", {value: port, text: port}));
+			});
+		});
+
+		socket.on('bluetoothDeviceFound', function (device) {
+			$('#bluetooth-port').append($("<option/>", {value: device.address, text: device.name}));
+		});
+
+		document.onkeydown = function(e) {
 			e = e || window.event;
 
 			socket.emit('downEvent', e.keyCode);
 		}
 
-		function checkUpEvent(e) {
+		document.onkeyup = function(e) {
 			e = e || window.event;
 
 			socket.emit('upEvent', e.keyCode);
 		}
+
+		$(function() {
+			$('#usb-search-btn').click(function() {
+				socket.emit('listUSBPorts');
+			});
+
+			$('#usb-connect-btn').click(function() {
+				port = $('#usb-port');
+
+				if (port.length > 0)
+					socket.emit('usbConnect', port.val());
+			});
+
+			$('#bluetooth-search-btn').click(function() {
+				$('#bluetooth-port').empty();
+				socket.emit('listBluetoothPorts');
+			});
+
+			$('#bluetooth-connect-btn').click(function() {
+				port = $('#bluetooth-port');
+
+				if (port.length > 0)
+					socket.emit('bluetoothConnect', port.val());
+			});
+		});
 	</script>
 
 	</head>
 	<body>
-	<div id="textDisplay">Hello</p>
+		<select id="usb-port"></select>
+		<button id="usb-connect-btn">Connect via USB</button>
+		<button id="usb-search-btn">Search for USB devices</button>
+
+		<br>
+
+		<select id="bluetooth-port"></select>
+		<button id="bluetooth-connect-btn">Connect via Bluetooth</button>
+		<button id="bluetooth-search-btn">Search for Bluetooth devices</button>
+
+		<span id="message"></span>
 	</body>
 </html>
