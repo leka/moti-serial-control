@@ -1,4 +1,5 @@
-
+// 20:13:06:13:14:75
+// 20:13:06:14:34:01
 
 function error_callback(err, bytesWritten){
 	if (err)
@@ -50,6 +51,9 @@ var myPort;
 var myBTPort = new (require('bluetooth-serial-port')).BluetoothSerialPort();
 var portType = '';
 
+var lastPress = 0;
+var lastKey = 0;
+
 
 app.get('/', function (request, response) {
 	response.sendfile(__dirname + '/index.html');
@@ -58,28 +62,34 @@ app.get('/', function (request, response) {
 
 io.sockets.on('connection', function (socket) {
 	socket.on('downEvent', function(keyCode) {
-		if (portType != '') {
+		if ((lastKey == keyCode) && (lastPress + 1000 > Date.now()))
+			return;
+
+		lastKey = keyCode;
+		lastPress = Date.now();
+
+		if (portType) {
 			console.log(keyCode);
 
 			switch (keyCode) {
 				case 37:
 					console.log('Left');
-					sendData(dataSpin(0, 255, 160));
+					sendData(dataSpin(0, 165, 160));
 					break;
 
 				case 38:
 					console.log('Forward');
-					sendData(dataGo(1, 255, 0));
+					sendData(dataGo(1, 165, 5000));
 					break;
 
 				case 39:
 					console.log('Right');
-					sendData(dataSpin(1, 255, 160));
+					sendData(dataSpin(1, 165, 160));
 					break;
 
 				case 40:
 					console.log('Backward');
-					sendData(dataGo(0, 255, 0));
+					sendData(dataGo(0, 165, 5000));
 					break;
 
 				default:
@@ -89,8 +99,11 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('upEvent', function (keyCode) {
-		if (portType != '') {
+		if (portType) {
 			console.log('Up');
+
+			lastKey = 0;
+			lastPress = 0;
 
 			sendData(dataStop());
 		}
@@ -111,8 +124,13 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('usbConnect', function(port) {
+		if (!port) {
+			console.log('lolnope.');
+			return;
+		}
+
 		socket.emit('disconnectDevice');
-		while (portType != '');
+		while (portType);
 
 		console.log('Connecting...');
 
@@ -134,6 +152,10 @@ io.sockets.on('connection', function (socket) {
 		socket.emit('bluetoothDeviceFound', {address: address, name: name});
 	});
 
+	myBTPort.on("data", function(data) {
+		console.log(data.toString('utf-8'));
+	});
+
 	socket.on('listBluetoothPorts', function () {
 		console.log("Searching for Bluetooth devices...");
 
@@ -141,8 +163,13 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('bluetoothConnect', function(address) {
+		if (!address) {
+			console.log('lolnope.');
+			return;
+		}
+
 		socket.emit('disconnectDevice');
-		while (portType != '');
+		while (portType);
 
 		portType = 'Bluetooth';
 
@@ -161,9 +188,13 @@ io.sockets.on('connection', function (socket) {
 		else if (portType == 'Bluetooth')
 			myBTPort.close();
 
-		if (portType != '')
+		if (portType)
 			console.log('Disconnected.');
 
 		portType = '';
+	});
+
+	socket.on('toggleMode', function() {
+		sendData([1]);
 	});
 });

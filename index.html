@@ -80,6 +80,17 @@
 
 				$('#message').text('Not connected.');
 			});
+
+			$('#toggle-mode-btn').click(function () {
+				socket.emit('toggleMode');
+
+				btn = $('#toggle-mode-btn');
+
+				if (btn.text() == 'Stabilization')
+					btn.text('Cruise');
+				else
+					btn.text('Stabilization');
+			});
 		});
 	</script>
 
@@ -103,6 +114,10 @@
 		<br>
 
 		<button id="disconnect-btn">Disconnect</button>
+
+		<br><br>
+
+		<button id="toggle-mode-btn">Stabilization</button>
 
 		<br><br>
 
