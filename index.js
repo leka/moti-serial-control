@@ -42,7 +42,8 @@ var serialport = require("serialport"),
 	SerialPort  = serialport.SerialPort,
 	app = require('express')(),
 	server = require('http').createServer(app),
-	io = require('socket.io').listen(server);
+	io = require('socket.io').listen(server),
+	fs = require('fs');
 
 server.listen(8080);
 console.log("Listening for new clients on port 8080");
@@ -50,6 +51,8 @@ console.log("Listening for new clients on port 8080");
 var myPort;
 var myBTPort = new (require('bluetooth-serial-port')).BluetoothSerialPort();
 var portType = '';
+
+var dataStream = fs.createWriteStream('moti_data');
 
 var lastPress = 0;
 var lastKey = 0;
@@ -74,22 +77,22 @@ io.sockets.on('connection', function (socket) {
 			switch (keyCode) {
 				case 37:
 					console.log('Left');
-					sendData(dataSpin(0, 165, 160));
+					sendData(dataSpin(0, 105, 160));
 					break;
 
 				case 38:
 					console.log('Forward');
-					sendData(dataGo(1, 165, 5000));
+					sendData(dataGo(1, 105, 5000));
 					break;
 
 				case 39:
 					console.log('Right');
-					sendData(dataSpin(1, 165, 160));
+					sendData(dataSpin(1, 105, 160));
 					break;
 
 				case 40:
 					console.log('Backward');
-					sendData(dataGo(0, 165, 5000));
+					sendData(dataGo(0, 105, 5000));
 					break;
 
 				default:
@@ -152,8 +155,8 @@ io.sockets.on('connection', function (socket) {
 		socket.emit('bluetoothDeviceFound', {address: address, name: name});
 	});
 
-	myBTPort.on("data", function(data) {
-		console.log(data.toString('utf-8'));
+	myBTPort.on('data', function(data) {
+		dataStream.write(data);
 	});
 
 	socket.on('listBluetoothPorts', function () {
